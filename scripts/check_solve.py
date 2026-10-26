@@ -1,12 +1,16 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Sequence, Tuple
+from typing import Sequence, Tuple
 
-from parse_vasekin import _parse_input, InputError
-from puzzle import PuzzleInput, Board, DIRECTIONS
+try:
+    from .parse_vasekin import _parse_input, InputError, read_input_text
+    from .puzzle import PuzzleInput, Board, DIRECTIONS
+except ImportError:
+    from parse_vasekin import _parse_input, InputError, read_input_text
+    from puzzle import PuzzleInput, Board, DIRECTIONS
 
 def _read_puzzle(path: str | Path) -> PuzzleInput:
-    return _parse_input(Path(path).read_text(encoding="utf-8"))
+    return _parse_input(read_input_text(path))
 
 @dataclass(frozen=True)
 class CheckResult:
@@ -44,6 +48,8 @@ def inversion_count(board: Sequence[int]) -> int:
     return inversions
 
 def is_solvable(puzzle: PuzzleInput) -> bool:
+    if puzzle.rows == 1 or puzzle.cols == 1:
+        return tuple(tile for tile in puzzle.board if tile) == tuple(range(1, len(puzzle.board)))
     inversions = inversion_count(puzzle.board)
     blank_index = puzzle.board.index(0)
     if puzzle.cols % 2 == 1:
@@ -51,8 +57,9 @@ def is_solvable(puzzle: PuzzleInput) -> bool:
     blank_row_from_bottom = puzzle.rows - (blank_index // puzzle.cols)
     return (inversions + blank_row_from_bottom) % 2 == 1
 
-def check_if_solve(path: str) -> bool:
-    return is_solvable(_parse_input(path))
+def check_if_solve(path: str | Path) -> bool:
+    """Return reachability for a task file (not the file's text)."""
+    return is_solvable(_read_puzzle(path))
 
 def _check_order(puzzle: PuzzleInput):
     if puzzle.order is None:
@@ -105,7 +112,7 @@ def _format_board(board: Sequence[int], rows: int, cols: int) -> str:
         for r in range(rows)
     )
 
-def check_solved(path: str | Path, verbose=False) ->Tuple[bool, float]:
+def check_solved(path: str | Path, verbose=False) -> Tuple[bool, int]:
     puzzle = _read_puzzle(path)
     checked = _check_order(puzzle)
 

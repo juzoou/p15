@@ -9,16 +9,12 @@ from pathlib import Path
 def validate_dimensions(rows: int, cols: int) -> None:
     if not (1 <= rows <= 100 and 1 <= cols <= 100):
         raise ValueError("rows and columns must each be in the range 1..100")
-    if rows == cols:
-        raise ValueError("the project format requires different row and column counts (N != M)")
     if not (2 <= rows * cols <= 10_000):
         raise ValueError("the board must contain between 2 and 10,000 cells")
 
 
 def make_scramble(rows: int, cols: int, steps: int, rng: random.Random) -> tuple[list[int], int]:
     board = list(range(1, rows * cols)) + [0]
-    if rows == 1 or cols == 1:
-        return board, 0
     blank = len(board) - 1
     previous_blank = -1
 
@@ -73,7 +69,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Create a reachable sliding-puzzle task in the DATA/COST text format.")
     parser.add_argument("rows", type=int, help="number of rows (1..100)")
-    parser.add_argument("cols", type=int, help="number of columns (1..100; different from rows)")
+    parser.add_argument("cols", type=int, help="number of columns (1..100)")
     parser.add_argument("-o", "--output", type=Path,
                         help="output .txt path (default: task_NxM.txt in the current directory)")
     parser.add_argument("--steps", type=int, default=100,

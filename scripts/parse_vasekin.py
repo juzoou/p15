@@ -1,12 +1,22 @@
-from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 import re
 from collections import Counter
-from puzzle import PuzzleInput, Move, DIRECTIONS
+try:
+    from .puzzle import PuzzleInput, Move, DIRECTIONS
+except ImportError:
+    from puzzle import PuzzleInput, Move, DIRECTIONS
 
 class InputError(ValueError):
     """Некорректный входной файл или недопустимый ORDER."""
+
+def read_input_text(path: str | Path) -> str:
+    """Read UTF-8 (including BOM) or legacy teacher files in Windows-1251."""
+    data = Path(path).read_bytes()
+    try:
+        return data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return data.decode("cp1251")
 
 def _tokens_with_lines(text: str) -> List[Tuple[str, int]]:
     """Удаляет комментарии и делит текст на токены, сохраняя номера строк.
@@ -30,6 +40,11 @@ def _parse_input(text: str) -> PuzzleInput:
     tokens = _tokens_with_lines(text)
     if not tokens:
         raise InputError("входной файл пуст")
+    if re.fullmatch(r"[+-]?\d+", tokens[0][0]):
+        if len(tokens) < 8:
+            raise InputError("simplified input requires costs, width, height and cells")
+        tokens = ([("COST", 1)] + tokens[:4] + [("/", 1), ("DATA", 1), ("SIZE", 1)]
+                  + [tokens[5], tokens[4]] + tokens[6:] + [("/", 1)])
 
     pos = 0
     data_values: Optional[List[Tuple[str, int]]] = None
@@ -81,8 +96,6 @@ def _parse_input(text: str) -> PuzzleInput:
     cols = _integer(data_values[2][0], data_values[2][1], "число столбцов M")
     if not (1 <= rows <= 100 and 1 <= cols <= 100):
         raise InputError("N и M должны находиться в диапазоне от 1 до 100")
-    if rows == cols:
-        raise InputError("по условиям задания количество строк и столбцов должно различаться (N != M)")
     if rows * cols > 10000:
         raise InputError("поле не должно содержать более 10 000 клеток")
     if rows * cols < 2:
@@ -121,6 +134,8 @@ def _parse_input(text: str) -> PuzzleInput:
             tile_token, tile_line = order_values[i]
             direction_token, direction_line = order_values[i + 1]
             tile = _integer(tile_token, tile_line, "номер фишки в ORDER")
+            if not 1 <= tile < rows * cols:
+                raise InputError(f"строка {tile_line}: номер фишки вне диапазона")
             direction = direction_token.upper()
             if direction not in DIRECTIONS:
                 raise InputError(f"строка {direction_line}: направление должно быть U, D, L или R")
@@ -159,7 +174,7 @@ def _parsed_to_simplified(puzzle, simplified_path=None):
 
 def vasekin_input_to_simplified(path_to_input: str, path_to_output: str = None):
     try:
-        text = Path(path_to_input).read_text(encoding="utf-8")
+        text = read_input_text(path_to_input)
     except FileNotFoundError as exc:
         raise FileNotFoundError(
             f"Входной файл не найден: {path_to_input}"

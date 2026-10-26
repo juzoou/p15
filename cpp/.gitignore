@@ -1,0 +1,4 @@
+/build/
+/pyatnashki_cpp
+*.o
+*.obj
