@@ -1,0 +1,9 @@
+-- example from the presentation
+DATA
+SIZE 3 4 -- 3 rows, 4 columns
+1 2 3 4
+5 6 = 8
+9 10 7 11
+/
+COST
+1 1 1 1 /
