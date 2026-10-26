@@ -3,29 +3,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 import re
 from collections import Counter
-
-Board = Tuple[int, ...]
-Move = Tuple[int, str]  # (номер фишки, направление движения фишки)
-
-DIRECTIONS = ("U", "D", "L", "R")
-
-@dataclass(frozen=True)
-class PuzzleInput:
-    rows: int
-    cols: int
-    board: Board
-    costs: Tuple[int, int, int, int]  # U, D, L, R
-    order: Optional[Tuple[Move, ...]]
-    had_cost_block: bool = False
-
-    @property
-    def tile_count(self) -> int:
-        return self.rows * self.cols - 1
-
-    @property
-    def goal(self) -> Board:
-        return tuple(range(1, self.rows * self.cols)) + (0,)
-
+from puzzle import PuzzleInput, Move, DIRECTIONS
 
 class InputError(ValueError):
     """Некорректный входной файл или недопустимый ORDER."""
