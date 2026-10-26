@@ -120,3 +120,8 @@ def check_solved(path: str | Path, verbose=False) ->Tuple[bool, float]:
         print(_format_board(checked.final_board, puzzle.rows, puzzle.cols))
 
     return checked.solved, checked.score
+
+import sys
+
+if __name__ == '__main__':
+    check_solved(sys.argv[1], verbose=True)

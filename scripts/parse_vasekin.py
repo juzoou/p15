@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 import re
 from collections import Counter
 from puzzle import PuzzleInput, Move, DIRECTIONS
+import argparse
 
 class InputError(ValueError):
     """Некорректный входной файл или недопустимый ORDER."""
@@ -180,3 +181,83 @@ def vasekin_input_to_simplified(path_to_input: str, path_to_output: str = None):
     puzzle = _parse_input(text)
 
     _parsed_to_simplified(puzzle, path_to_output)
+
+
+def _write_error(err_dir: Path, src: Path, original_text: str, exc: Exception) -> None:
+    """Пишет исходный файл в err_dir, дописав ошибку как комментарий."""
+    err_dir.mkdir(parents=True, exist_ok=True)
+    message = " ".join(str(exc).split())  # схлопываем переносы строк
+    body = original_text.rstrip("\n")
+    if body:
+        body += "\n"
+    body += f"-- ОШИБКА: {message}\n"
+    (err_dir / src.name).write_text(body, encoding="utf-8")
+
+def convert_folder(input_dir: str, output_dir: str) -> None:
+    in_dir = Path(input_dir)
+    out_dir = Path(output_dir)
+    solve_dir = out_dir / "solve"
+    check_dir = out_dir / "check_order"
+    err_dir = out_dir / "err"
+
+    if not in_dir.is_dir():
+        raise NotADirectoryError(f"Входная папка не найдена: {in_dir}")
+
+    for d in (solve_dir, check_dir, err_dir):
+        d.mkdir(parents=True, exist_ok=True)
+
+    ok_solve = ok_check = failed = 0
+
+    for src in sorted(in_dir.iterdir()):
+        if not src.is_file():
+            continue
+
+        try:
+            text = src.read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:
+            try:
+                text = src.read_bytes().decode("utf-8", errors="replace")
+            except OSError:
+                text = ""
+            _write_error(err_dir, src, text, exc)
+            failed += 1
+            continue
+        except OSError as exc:
+            _write_error(err_dir, src, "", exc)
+            failed += 1
+            continue
+
+        try:
+            puzzle = _parse_input(text)
+        except Exception as exc:  # InputError и прочее
+            _write_error(err_dir, src, text, exc)
+            failed += 1
+            continue
+
+        # ORDER есть -> файл для проверки, кладём в check_order как есть;
+        # ORDER нет  -> файл для решения, кладём упрощённый вариант в solve.
+        try:
+            if puzzle.order is not None:
+                (check_dir / src.name).write_text(text, encoding="utf-8")
+                ok_check += 1
+            else:
+                _parsed_to_simplified(puzzle, solve_dir / src.name)
+                ok_solve += 1
+        except Exception as exc:
+            _write_error(err_dir, src, text, exc)
+            failed += 1
+
+    print(f"Готово: solve={ok_solve}, check_order={ok_check}, ошибок={failed}")
+    print(f"Результат: {out_dir}")
+    if failed:
+        print(f"Файлы с ошибками: {err_dir}")
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="Пакетная конвертация файлов формата Васекина в упрощённый."
+    )
+    parser.add_argument("input_dir", help="папка с исходными файлами")
+    parser.add_argument("output_dir", help="папка для упрощённых файлов")
+    args = parser.parse_args()
+
+    convert_folder(args.input_dir, args.output_dir)
