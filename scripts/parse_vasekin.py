@@ -141,7 +141,7 @@ def _parsed_to_simplified(puzzle, simplified_path=None):
     if simplified_path is None:
         simplified_path = f"test_{puzzle.cols}x{puzzle.rows}.txt"
 
-    text = f'{" ".join(map(str, puzzle.costs))} {puzzle.cols} {puzzle.rows} {" ".join(map(str, puzzle.board))}'
+    text = f'{" ".join(map(str, puzzle.costs))} {puzzle.rows} {puzzle.cols} {" ".join(map(str, puzzle.board))}'
 
     try:
         output_path = Path(simplified_path)
