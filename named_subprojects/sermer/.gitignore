@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+/build/
+/cpp/build/
+/cpp/pyatnashki_cpp
+/cpp/pyatnashki_cpp.exe
+/artifacts/

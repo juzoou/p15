@@ -1,0 +1,31 @@
+﻿file,expected,observed,python_status,exit_code,solved,score,passed,seconds,detail
+t01.txt,valid,valid,valid,0,True,299,True,0.018485,
+t02.txt,valid,valid,valid,0,True,1100,True,0.016782,
+t03.txt,valid,valid,valid,0,True,1098,True,0.017117,
+t04.txt,valid,valid,valid,0,True,499,True,0.018794,
+t05.txt,valid,valid,valid,0,True,499,True,0.016964,
+t06.txt,valid,valid,valid,0,True,399,True,0.017499,
+t07.txt,valid,valid,valid,0,True,299,True,0.016849,
+t08.txt,valid,valid,valid,0,True,500,True,0.017071,
+t09.txt,valid,valid,valid,0,True,499,True,0.016969,
+t10.txt,valid,valid,valid,0,False,599,True,0.016648,
+t11.txt,invalid,invalid,invalid,2,,,True,0.016420,ERROR: required DATA block is missing
+t12.txt,invalid,invalid,invalid,2,,,True,0.015645,ERROR: block DATA is missing '/'
+t13.txt,invalid,invalid,invalid,2,,,True,0.016903,ERROR: board value count does not match SIZE
+t14.txt,invalid,invalid,invalid,2,,,True,0.017598,ERROR: board value count does not match SIZE
+t15.txt,invalid,invalid,invalid,2,,,True,0.016639,ERROR: board must contain each value 0..N*M-1 exactly once
+t16.txt,invalid,invalid,invalid,2,,,True,0.017601,"ERROR: expected integer for tile, got '=='"
+t17.txt,invalid,invalid,invalid,2,,,True,0.018471,ERROR: board must contain each value 0..N*M-1 exactly once
+t18.txt,invalid,invalid,invalid,2,,,True,0.016060,ERROR: board values must be in the range 0..N*M-1
+t19.txt,invalid,invalid,invalid,2,,,True,0.017394,ERROR: board values must be in the range 0..N*M-1
+t20.txt,invalid,invalid,invalid,2,,,True,0.017541,ERROR: DATA must start with 'SIZE N M' followed by the board
+t21.txt,invalid,invalid,invalid,2,,,True,0.016286,ERROR: board value count does not match SIZE
+t22.txt,invalid,invalid,invalid,2,,,True,0.016461,ERROR: COST must contain exactly U D L R values
+t23.txt,invalid,invalid,invalid,2,,,True,0.015834,ERROR: move costs must be nonnegative
+t24.txt,invalid,invalid,invalid,2,,,True,0.017318,ERROR: unknown block or extra token: ROUTE
+t25.txt,invalid,invalid,invalid,2,,,True,0.016771,ERROR: invalid tile/direction pair in ORDER
+t26.txt,invalid,invalid,invalid,2,,,True,0.017448,ERROR: ORDER must contain tile/direction pairs
+t27.txt,invalid,invalid,invalid,2,,,True,0.018440,"ERROR: expected integer for row count, got 'два'"
+t28.txt,invalid,invalid,invalid,2,,,True,0.017897,ERROR: board value count does not match SIZE
+t29.txt,invalid,invalid,invalid,2,,,True,0.017004,ERROR: illegal move 1 in ORDER
+t30.txt,unreachable,unreachable,unreachable,2,,,True,0.017348,ERROR: puzzle is unreachable (tile order or permutation parity)

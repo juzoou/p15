@@ -1,0 +1,9 @@
+-- Small regression example; moving tile 5 left solves the puzzle.
+DATA
+SIZE 2 3
+1 2 3
+4 = 5
+/
+COST
+1 1 1 1
+/

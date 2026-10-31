@@ -1,0 +1,132 @@
+{
+  "t01.txt": {
+    "status": "valid",
+    "score": 299,
+    "solved": true
+  },
+  "t02.txt": {
+    "status": "valid",
+    "score": 1100,
+    "solved": true
+  },
+  "t03.txt": {
+    "status": "valid",
+    "score": 1098,
+    "solved": true
+  },
+  "t04.txt": {
+    "status": "valid",
+    "score": 499,
+    "solved": true
+  },
+  "t05.txt": {
+    "status": "valid",
+    "score": 499,
+    "solved": true
+  },
+  "t06.txt": {
+    "status": "valid",
+    "score": 399,
+    "solved": true
+  },
+  "t07.txt": {
+    "status": "valid",
+    "score": 299,
+    "solved": true
+  },
+  "t08.txt": {
+    "status": "valid",
+    "score": 500,
+    "solved": true
+  },
+  "t09.txt": {
+    "status": "valid",
+    "score": 499,
+    "solved": true
+  },
+  "t10.txt": {
+    "status": "valid",
+    "score": 599,
+    "solved": false
+  },
+  "t11.txt": {
+    "status": "invalid",
+    "error_contains": "required DATA"
+  },
+  "t12.txt": {
+    "status": "invalid",
+    "error_contains": "missing '/'"
+  },
+  "t13.txt": {
+    "status": "invalid",
+    "error_contains": "board value count"
+  },
+  "t14.txt": {
+    "status": "invalid",
+    "error_contains": "board value count"
+  },
+  "t15.txt": {
+    "status": "invalid",
+    "error_contains": "exactly once"
+  },
+  "t16.txt": {
+    "status": "invalid",
+    "error_contains": "expected integer"
+  },
+  "t17.txt": {
+    "status": "invalid",
+    "error_contains": "exactly once"
+  },
+  "t18.txt": {
+    "status": "invalid",
+    "error_contains": "range 0..N*M-1"
+  },
+  "t19.txt": {
+    "status": "invalid",
+    "error_contains": "range 0..N*M-1"
+  },
+  "t20.txt": {
+    "status": "invalid",
+    "error_contains": "DATA must start"
+  },
+  "t21.txt": {
+    "status": "invalid",
+    "error_contains": "board value count"
+  },
+  "t22.txt": {
+    "status": "invalid",
+    "error_contains": "COST must contain exactly"
+  },
+  "t23.txt": {
+    "status": "invalid",
+    "error_contains": "costs must be nonnegative"
+  },
+  "t24.txt": {
+    "status": "invalid",
+    "error_contains": "unknown block"
+  },
+  "t25.txt": {
+    "status": "invalid",
+    "error_contains": "invalid tile/direction"
+  },
+  "t26.txt": {
+    "status": "invalid",
+    "error_contains": "tile/direction pairs"
+  },
+  "t27.txt": {
+    "status": "invalid",
+    "error_contains": "expected integer"
+  },
+  "t28.txt": {
+    "status": "invalid",
+    "error_contains": "board value count"
+  },
+  "t29.txt": {
+    "status": "invalid",
+    "error_contains": "illegal move"
+  },
+  "t30.txt": {
+    "status": "unreachable",
+    "error_contains": "puzzle is unreachable"
+  }
+}

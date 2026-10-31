@@ -1,0 +1,7 @@
+DATA
+SIZE 1 5
+1 2 3 = 4
+/
+ORDER
+4 L
+/
