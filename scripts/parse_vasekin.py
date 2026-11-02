@@ -82,8 +82,6 @@ def _parse_input(text: str) -> PuzzleInput:
     cols = _integer(data_values[2][0], data_values[2][1], "число столбцов M")
     if not (1 <= rows <= 100 and 1 <= cols <= 100):
         raise InputError("N и M должны находиться в диапазоне от 1 до 100")
-    if rows == cols:
-        raise InputError("по условиям задания количество строк и столбцов должно различаться (N != M)")
     if rows * cols > 10000:
         raise InputError("поле не должно содержать более 10 000 клеток")
     if rows * cols < 2:
