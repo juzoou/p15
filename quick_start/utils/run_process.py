@@ -4,6 +4,7 @@ import sys
 import time
 
 def run(command, label="Running...", show_output=False, cwd=None):
+    t0 = time.perf_counter()
     process = subprocess.Popen(
         command,
         shell=True,
@@ -22,11 +23,12 @@ def run(command, label="Running...", show_output=False, cwd=None):
 
         sys.stdout.write(f"\r{label} {char}")
         sys.stdout.flush()
-        time.sleep(0.1)
+        time.sleep(0.11)
 
     output, _ = process.communicate()
+    t1 = time.perf_counter()
 
-    print(f"\r{label} Done ({'ok' if process.returncode == 0 else 'fail'})")
+    print(f"\r{label} Done ({'ok' if process.returncode == 0 else 'fail'}, {t1 - t0:.1f}s)")
     if show_output:
         print(output, end="")
 

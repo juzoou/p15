@@ -1,7 +1,6 @@
 import os
 import subprocess
 from utils.run_process import run
-RepoName = "p15"
 
 
 def norm_path(p):
@@ -25,6 +24,7 @@ class Alexb:
 
 
 class Juzoou:
+    @staticmethod
     def build():
         path = norm_path(r"named_subprojects\juzoou\build.sh")
         with open(path) as f:
@@ -36,6 +36,7 @@ class Juzoou:
                 return
         run(cmd, "Building juzoou...", cwd=norm_path(r"named_subprojects\juzoou"))
 
+    @staticmethod
     def locate():
         base = norm_path(r"named_subprojects\juzoou")
         paths = ["p15_lns.exe"]
@@ -43,20 +44,50 @@ class Juzoou:
 
 
 class Sermer:
+    @staticmethod
     def build():
         cmd = "python scripts/build_cpp.py"
         run(cmd, "Building sermer...", cwd=norm_path(r"named_subprojects\sermer"))
 
+    @staticmethod
     def locate():
         path = norm_path(r"named_subprojects\sermer\scripts\solve_cpp.py")
         info = subprocess.run(["python3", path], text=True, capture_output=True).stderr
         algos_line = info.split("--algorithm ")[1].split("]")[0]
         algos = algos_line.split("|")
         return [(f"python3 {path} --algorithm {a}", f"sermer_{a}") for a in algos]
+
+
+class Tribouchet:
+    @staticmethod
+    def build():
+        cmd = "python build.py"
+        run(cmd, "Building tribouchet...", cwd=norm_path(r"named_subprojects\tribouchet"))
+
+    @staticmethod
+    def locate():
+        path = norm_path(r"named_subprojects\tribouchet\solver.exe")
+        depth_selection = [8, 10, 12]
+        time_selection = [50]
+        beam_selection = [8, 10, 14]
+        params = [(d, t, b) for d in depth_selection for t in time_selection for b in beam_selection]
+
+        return [(f"{path} --depth {d} --time {t} --beam {b}", f"tribouchet_d{d}_t{t}_b{b}") for d, t, b in params]
     
 
-def locate_solvers():
-    return Alexb.locate() + Juzoou.locate() + Sermer.locate()
+
+def locate_solvers(pool="tjas", ignore=""):
+    lookup = {
+        "a": Alexb,
+        "j": Juzoou,
+        "s": Sermer,
+        "t": Tribouchet
+    }
+    res = []
+    for i in pool:
+        if (i in lookup) and (i not in ignore):
+            res += lookup[i].locate()
+    return res
 
 def print_solvers():
     for cmd, label in locate_solvers():
@@ -65,15 +96,13 @@ def print_solvers():
 
 
 if __name__ == "__main__":
-    cwd = os.getcwd()
-    if os.path.basename(cwd) != RepoName:
-        print(f"Script should be ran from repository root ({RepoName})")
-        print(f"Current working directory: {cwd}")
-        exit(1)
+    from utils.ensure_cwd import assert_cwd
+    assert_cwd()
 
-    # Alexb.build()
-    # Juzoou.build()
-    # Sermer.build()
+    Alexb.build()
+    Juzoou.build()
+    Sermer.build()
+    Tribouchet.build()
     print_solvers()
 
 
