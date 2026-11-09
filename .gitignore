@@ -3,3 +3,4 @@ test_solutions/
 .vscode/
 .venv/
 *.exe
+.idea/

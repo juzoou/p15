@@ -121,7 +121,6 @@ def check_solved(path: str | Path, verbose=False) ->Tuple[bool, float]:
 
     return checked.solved, checked.score
 
-import sys
-
 if __name__ == '__main__':
+    import sys
     check_solved(sys.argv[1], verbose=True)
