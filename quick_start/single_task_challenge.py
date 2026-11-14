@@ -77,10 +77,13 @@ def print_table(table, sep="  "):
 if __name__ == "__main__":
     authors = "ajts"
 
+    outdir = r"test_solutions"
+    os.makedirs(outdir, exist_ok=True)
+
     res = []
     for cmd, label in locate_solvers(authors):
         in_path = r"tests\task89x98.txt"
-        out_path = rf"test_solutions\{label}.txt"
+        out_path = os.path.join(outdir, f"{label}.txt")
         run_res = run_test(in_path, out_path)
         verify_res = verify_test(out_path)
         res.append((label, run_res, verify_res))

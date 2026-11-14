@@ -68,7 +68,7 @@ class Tribouchet:
     def locate():
         path = norm_path(r"named_subprojects\tribouchet\solver.exe")
         depth_selection = [8, 10, 12]
-        time_selection = [50]
+        time_selection = [30]
         beam_selection = [8, 10, 14]
         params = [(d, t, b) for d in depth_selection for t in time_selection for b in beam_selection]
 
