@@ -46,7 +46,7 @@ class Juzoou:
 class Sermer:
     @staticmethod
     def build():
-        cmd = "python scripts/build_cpp.py"
+        cmd = "python3 scripts/build_cpp.py"
         run(cmd, "Building sermer...", cwd=norm_path(r"named_subprojects\sermer"))
 
     @staticmethod
@@ -61,7 +61,7 @@ class Sermer:
 class Tribouchet:
     @staticmethod
     def build():
-        cmd = "python build.py"
+        cmd = "python3 build.py"
         run(cmd, "Building tribouchet...", cwd=norm_path(r"named_subprojects\tribouchet"))
 
     @staticmethod
@@ -73,7 +73,19 @@ class Tribouchet:
         params = [(d, t, b) for d in depth_selection for t in time_selection for b in beam_selection]
 
         return [(f"{path} --depth {d} --time {t} --beam {b}", f"tribouchet_d{d}_t{t}_b{b}") for d, t, b in params]
+
+
+class TBoost:
+    @staticmethod
+    def build():
+        cmd = "python3 build.py"
+        run(cmd, "Building tboost...", cwd=norm_path(r"named_subprojects\tribouchet_boost"))
     
+    @staticmethod
+    def locate():
+        path = norm_path(r"named_subprojects\tribouchet_boost\optimize.exe")
+        return [(path, f"tboost")]
+
 
 
 def locate_solvers(pool="tjas", ignore=""):
@@ -103,6 +115,8 @@ if __name__ == "__main__":
     Juzoou.build()
     Sermer.build()
     Tribouchet.build()
+    TBoost.build()
+
     print_solvers()
 
 

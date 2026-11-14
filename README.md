@@ -38,6 +38,7 @@
 
 ### Результаты тестирования
 
+***Noise challenge (35 second timeout)***
 ```
 Algorithm               Solved  Mean      Std       Min     Max     T mean  T std
 tribouchet_d10_t30_b8   5/5     863032.0  0.0       863032  863032  7.0     0.2  
@@ -70,5 +71,27 @@ sermer_bidijkstra       0/5     0.0       0.0       0       0       35.0    0.0
 sermer_idastar          0/5     0.0       0.0       0       0       35.1    0.0  
 sermer_01bfs            0/5     0.0       0.0       0       0       35.0    0.0  
 sermer_dial             0/5     0.0       0.0       0       0       35.1    0.1  
+```
+
+
+***Boost try (20 seconds per solution)***
+```
+solution                      status  init_score  boost_score  delta  delta_%
+alexb_beam_1.txt              OK      865490      866030       +540   +0.1%  
+tribouchet_d10_t30_b10_1.txt  OK      863032      863718       +686   +0.1%  
+tribouchet_d10_t30_b8_1.txt   OK      863032      863718       +686   +0.1%  
+juzoou_lns_1.txt              OK      862270      862498       +228   +0.0%  
+tribouchet_d8_t30_b14_1.txt   OK      862198      863038       +840   +0.1%  
+tribouchet_d8_t30_b10_1.txt   OK      862188      863022       +834   +0.1%  
+tribouchet_d8_t30_b8_1.txt    OK      862188      863022       +834   +0.1%  
+alexb_reduce_1.txt            OK      861418      862080       +662   +0.1%  
+tribouchet_d12_t30_b10_1.txt  OK      861404      862340       +936   +0.1%  
+tribouchet_d12_t30_b8_1.txt   OK      861132      862020       +888   +0.1%  
+tribouchet_d10_t30_b14_1.txt  OK      860852      861742       +890   +0.1%  
+tribouchet_d12_t30_b14_1.txt  OK      860424      861470       +1046  +0.1%  
+sermer_columnbycolumn_1.txt   OK      856796      860884       +4088  +0.5%  
+sermer_auto_1.txt             OK      854180      860870       +6690  +0.8%  
+sermer_divideconquer_1.txt    OK      854180      860872       +6692  +0.8%  
+sermer_rowbyrow_1.txt         OK      854180      860870       +6690  +0.8%  
 ```
 

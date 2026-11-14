@@ -1,6 +1,7 @@
 __pycache__
 test_solutions/
 test_pool/
+test_boost/
 .vscode/
 .venv/
 *.exe

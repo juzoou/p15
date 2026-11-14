@@ -1,7 +1,8 @@
 // optimize.cpp - optimises the move list of a sliding-tile puzzle ("15 puzzle", any R x C, up to 100 x 100).
 //
-//   ./optimize in.txt out.txt [seconds=120] [threads=auto] [--full]
-//       seconds=0: only check ORDER and print the objective      --full: never drop the tail of the order
+//   optimizer [-t seconds] [-j threads] in.txt out.txt
+//       -t, --time     time budget in seconds (default 120); 0 = only check ORDER and print the objective
+//       -j, --threads  worker threads (default: auto)
 //
 // Input/output follow the formal task "PYATNASHKI 2026":
 //   DATA   / SIZE N M / N rows, '=' is the free cell / "/"        starting position
@@ -25,8 +26,6 @@
 // Phase 2 (plateau)  when descent is stuck (local minimum) random windows are rewritten by a DIFFERENT path of the
 //                    SAME cost, then the neighbourhood is re-examined by descent. This random walk over equal-cost
 //                    solutions moves the solution to where new shortcuts exist.
-// Finally the best PREFIX of the order is kept (F is measured after the last move, so when the last tiles cost more
-// than 100 points each to place, stopping early scores higher). --full switches this off.
 //
 // The move list is cut into chunks that are optimised independently (one thread each); chunk borders move
 // between passes. Every pass ends with a full replay that checks the final board is unchanged, and the best
@@ -263,33 +262,6 @@ static int countPlaced(const Geometry& g, const vector<uint16_t>& B) {   // tile
     for (int c = 0; c < g.N - 1; c++) P += (B[c] == c + 1);
     return P;
 }
-// F after the first k moves
-static i64 prefixScore(const Geometry& g, const vector<uint16_t>& start, const vector<uint8_t>& mv, size_t k) {
-    vector<uint16_t> B = start;
-    int blank = (int)(find(B.begin(), B.end(), 0) - B.begin());
-    i64 cost = 0, placed = countPlaced(g, B);
-    for (size_t j = 0; j < k; j++) {
-        int nb = g.nbr[blank * 4 + mv[j]], t = B[nb];
-        placed += (blank == t - 1) - (nb == t - 1);
-        cost += g.cb[mv[j]];
-        B[blank] = t; B[nb] = 0; blank = nb;
-    }
-    return 100 * placed - cost;
-}
-static size_t bestPrefix(const Geometry& g, const vector<uint16_t>& start, const vector<uint8_t>& mv) {
-    vector<uint16_t> B = start;
-    int blank = (int)(find(B.begin(), B.end(), 0) - B.begin());
-    i64 cost = 0, placed = countPlaced(g, B), bestF = 100 * placed;
-    size_t bestK = 0;
-    for (size_t j = 0; j < mv.size(); j++) {
-        int nb = g.nbr[blank * 4 + mv[j]], t = B[nb];
-        placed += (blank == t - 1) - (nb == t - 1);
-        cost += g.cb[mv[j]];
-        B[blank] = t; B[nb] = 0; blank = nb;
-        if (100 * placed - cost > bestF) { bestF = 100 * placed - cost; bestK = j + 1; }
-    }
-    return bestK;
-}
 
 // Can the position reach the final one? (inversion parity; the free cell must end bottom-right)
 static bool solvable(const Puzzle& p) {
@@ -327,7 +299,9 @@ static void savePuzzle(const string& path, const Puzzle& p) {
     }
     out += "/\n";
     ofstream f(path + ".tmp"); f << out; f.close();
-    rename((path + ".tmp").c_str(), path.c_str());
+    remove(path.c_str());   // Windows rename() fails if the destination exists
+    if (rename((path + ".tmp").c_str(), path.c_str()) != 0)
+        fprintf(stderr, "warning: could not rename %s.tmp to %s\n", path.c_str(), path.c_str());
 }
 
 static vector<uint16_t> replay(const Geometry& g, vector<uint16_t> B, const vector<uint8_t>& mv) {
@@ -716,25 +690,27 @@ static i64 plateauPass(const Geometry& g, const Puzzle& p, vector<uint8_t>& mv, 
 }
 
 // ---------------------------------------------------------------------------------------------
-int main(int argc0, char** argv0) {
-    bool keepFull = false;
-    vector<char*> args;
-    for (int i = 0; i < argc0; i++) { if (!strcmp(argv0[i], "--full")) keepFull = true; else args.push_back(argv0[i]); }
-    int argc = (int)args.size();
-    char** argv = args.data();
-    if (argc < 3) {
-        fprintf(stderr, "usage: %s in.txt out.txt [seconds=120] [threads=auto] [--full]\n"
-                        "       seconds=0: only validate ORDER and print the objective\n"
-                        "       --full:    never drop the tail of the order, even if that would raise F\n", argv[0]);
+int main(int argc, char** argv) {
+    double timeLimit = 120.0;
+    int threads = (int)thread::hardware_concurrency();
+    vector<string> pos;   // positional: in, out
+    for (int i = 1; i < argc; i++) {
+        string a = argv[i];
+        if ((a == "-t" || a == "--time") && i + 1 < argc) timeLimit = atof(argv[++i]);
+        else if ((a == "-j" || a == "--threads") && i + 1 < argc) threads = atoi(argv[++i]);
+        else pos.push_back(a);
+    }
+    if (pos.size() != 2) {
+        fprintf(stderr, "usage: %s [-t seconds] [-j threads] in.txt out.txt\n"
+                        "       -t, --time     time budget in seconds (default 120); 0 = only validate ORDER and print the objective\n"
+                        "       -j, --threads  worker threads (default: auto)\n", argv[0]);
         return 1;
     }
-    const string outPath = argv[2];
-    double timeLimit = argc > 3 ? atof(argv[3]) : 120.0;
-    int threads = argc > 4 ? atoi(argv[4]) : (int)thread::hardware_concurrency();
+    const string outPath = pos[1];
     if (threads < 1) threads = 1;
 
     Puzzle p;
-    loadPuzzle(argv[1], p);
+    loadPuzzle(pos[0], p);
     Geometry g; g.init(p.R, p.C, p.cost);
     printf("board %dx%d (%d tiles), cost U/D/L/R = %lld/%lld/%lld/%lld\n", p.R, p.C, p.N - 1,
            p.cost[0], p.cost[1], p.cost[2], p.cost[3]);
@@ -773,7 +749,7 @@ int main(int argc0, char** argv0) {
     report(s ? "cycle removal" : "cycle removal (none)");
 
     if ((g.tc[0] | g.tc[1] | g.tc[2] | g.tc[3]) == 0) {
-        printf("all four costs are zero: no move can be made cheaper, only the tail trimming below applies\n");
+        printf("all four costs are zero: no move can be made cheaper\n");
         timeLimit = 0;   // skips both phases
     }
     Config cfg;
@@ -812,17 +788,6 @@ int main(int argc0, char** argv0) {
         descent(32, 80000);
         if (round % 3 == 2 && now_s() < timeLimit) descent(40, 320000);
         if (round % 6 == 5 && now_s() < timeLimit) descent(48, 1280000);
-    }
-
-    // F is measured after the last move: keep the best prefix of the order
-    size_t k = keepFull ? mv.size() : bestPrefix(g, p.start, mv);
-    if (k < mv.size() && prefixScore(g, p.start, mv, k) > prefixScore(g, p.start, mv, mv.size())) {
-        mv.resize(k);
-        vector<uint16_t> fin = replay(g, p.start, mv);
-        i64 c = pathCost(g, mv);
-        printf("[%7.1fs] best prefix kept: %zu moves, %d tiles in place, cost %lld, F = %lld\n", now_s(), mv.size(),
-               countPlaced(g, fin), c, 100LL * countPlaced(g, fin) - c);
-        Puzzle q = p; q.mv = mv; savePuzzle(outPath, q);
     }
     return 0;
 }
