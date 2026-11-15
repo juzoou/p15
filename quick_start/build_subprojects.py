@@ -8,19 +8,21 @@ def norm_path(p):
 
 
 class Alexb:
+    base = norm_path(r"named_subprojects\alexb\bin")
+
     @staticmethod
     def build():
         if os.name == "nt":
             path = norm_path(r"named_subprojects\alexb\build.bat")
         else:
             path = norm_path(r"named_subprojects\alexb\build.sh")
-        run(f"powershell {path}", "Building alexb...", cwd=norm_path(r"named_subprojects\alexb"))
+        # run(f"powershell {path}", "Building alexb...", cwd=norm_path(r"named_subprojects\alexb\src"))
+        run(f"powershell {path}", "Building alexb...")
 
     @staticmethod
     def locate():
-        base = norm_path(r"named_subprojects\alexb\bin")
-        paths = os.listdir(base)
-        return [(os.path.join(base, p), p.replace(".exe", "").replace("p15_", "alexb_")) for p in paths]
+        paths = os.listdir(Alexb.base)
+        return [(os.path.join(Alexb.base, p), p.replace(".exe", "").replace("p15_", "alexb_")) for p in paths]
 
 
 class Juzoou:
