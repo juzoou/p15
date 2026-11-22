@@ -3,6 +3,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -82,7 +84,12 @@ SearchResult dial(const Puzzle& puzzle, std::uint64_t max_expanded);
 SearchResult bidirectional_dijkstra(const Puzzle& puzzle, std::uint64_t max_expanded);
 
 // Constructive solvers for large boards. Neither promises minimum cost.
-SearchResult row_by_row(const Puzzle& puzzle);
-SearchResult column_by_column(const Puzzle& puzzle);
+using TailSolver = std::function<SearchResult(const Puzzle&)>;
+SearchResult row_by_row(const Puzzle& puzzle, const TailSolver& solve_tail = {});
+SearchResult column_by_column(const Puzzle& puzzle, const TailSolver& solve_tail = {});
+
+struct SearchLimitExceeded : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
 
 } // namespace pyatnashki

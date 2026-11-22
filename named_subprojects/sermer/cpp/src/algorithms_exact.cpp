@@ -125,7 +125,7 @@ static SearchResult best_first_weighted_impl(const Puzzle& puzzle, std::uint64_t
             const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
             return {reconstruct(nodes, item.node), current.g, expanded, elapsed};
         }
-        if (++expanded > max_expanded) throw std::runtime_error("search expansion limit exceeded");
+        if (++expanded > max_expanded) throw SearchLimitExceeded("search expansion limit exceeded");
 
         for (auto& next : neighbors(current.board, current.blank, puzzle)) {
             if (current.g > INF - next.cost) throw std::runtime_error("path cost overflow");
@@ -179,7 +179,7 @@ SearchResult ida_star(const Puzzle& puzzle, std::uint64_t max_expanded) {
             solution_cost = g;
             return g;
         }
-        if (++expanded > max_expanded) throw std::runtime_error("search expansion limit exceeded");
+        if (++expanded > max_expanded) throw SearchLimitExceeded("search expansion limit exceeded");
 
         auto next_states = neighbors(board, blank_index, puzzle);
         std::stable_sort(next_states.begin(), next_states.end(), [&](const Neighbor& left, const Neighbor& right) {
@@ -246,7 +246,7 @@ SearchResult zero_one_bfs(const Puzzle& puzzle, std::uint64_t max_expanded) {
             const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
             return {reconstruct(nodes, id), current.g, expanded, elapsed};
         }
-        if (++expanded > max_expanded) throw std::runtime_error("search expansion limit exceeded");
+        if (++expanded > max_expanded) throw SearchLimitExceeded("search expansion limit exceeded");
 
         for (auto& next : neighbors(current.board, current.blank, puzzle)) {
             if (current.g > INF - next.cost) throw std::runtime_error("path cost overflow");
@@ -297,7 +297,7 @@ SearchResult dial(const Puzzle& puzzle, std::uint64_t max_expanded) {
             const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
             return {reconstruct(nodes, id), current.g, expanded, elapsed};
         }
-        if (++expanded > max_expanded) throw std::runtime_error("search expansion limit exceeded");
+        if (++expanded > max_expanded) throw SearchLimitExceeded("search expansion limit exceeded");
 
         for (auto& next : neighbors(current.board, current.blank, puzzle)) {
             if (current.g > INF - next.cost) throw std::runtime_error("path cost overflow");
@@ -381,7 +381,7 @@ SearchResult bidirectional_dijkstra(const Puzzle& puzzle, std::uint64_t max_expa
         const auto item = queue.top();
         queue.pop();
         const SearchNode current = nodes[item.node];
-        if (++expanded > max_expanded) throw std::runtime_error("search expansion limit exceeded");
+        if (++expanded > max_expanded) throw SearchLimitExceeded("search expansion limit exceeded");
 
         for (auto& next : neighbors(current.board, current.blank, puzzle, !expand_forward)) {
             if (current.g > INF - next.cost) throw std::runtime_error("path cost overflow");

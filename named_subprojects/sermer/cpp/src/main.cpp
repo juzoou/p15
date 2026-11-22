@@ -1,5 +1,6 @@
 #include "pyatnashki/types.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <cmath>
 #include <filesystem>
@@ -89,21 +90,54 @@ int run_main(int argc, char** argv) {
             else algorithm = puzzle.rows <= puzzle.cols ? "ROWBYROW" : "COLUMNBYCOLUMN";
         }
 
+        const auto search = [&](const Puzzle& board) -> SearchResult {
+            if (algorithm == "ASTAR") return best_first(board, max_expanded, true);
+            if (algorithm == "WASTAR") return weighted_a_star(board, max_expanded, weight);
+            if (algorithm == "LINEARCONFLICT") return linear_conflict_astar(board, max_expanded);
+            if (algorithm == "RBFS") return rbfs(board, max_expanded);
+            if (algorithm == "PDB") return pattern_database(board, max_expanded);
+            if (algorithm == "ANNEALING") return simulated_annealing(board, max_expanded);
+            if (algorithm == "DIJKSTRA") return best_first(board, max_expanded, false);
+            if (algorithm == "BIDIJKSTRA") return bidirectional_dijkstra(board, max_expanded);
+            if (algorithm == "IDASTAR") return ida_star(board, max_expanded);
+            if (algorithm == "01BFS") return zero_one_bfs(board, max_expanded);
+            if (algorithm == "DIAL") return dial(board, max_expanded);
+            throw std::runtime_error("unknown algorithm: " + algorithm);
+        };
         SearchResult result;
+        std::string reduction;
+        std::string tail_algorithm;
         if (algorithm == "ROWBYROW") result = row_by_row(puzzle);
         else if (algorithm == "COLUMNBYCOLUMN") result = column_by_column(puzzle);
-        else if (algorithm == "ASTAR") result = best_first(puzzle, max_expanded, true);
-        else if (algorithm == "WASTAR") result = weighted_a_star(puzzle, max_expanded, weight);
-        else if (algorithm == "LINEARCONFLICT") result = linear_conflict_astar(puzzle, max_expanded);
-        else if (algorithm == "RBFS") result = rbfs(puzzle, max_expanded);
-        else if (algorithm == "PDB") result = pattern_database(puzzle, max_expanded);
-        else if (algorithm == "ANNEALING") result = simulated_annealing(puzzle, max_expanded);
-        else if (algorithm == "DIJKSTRA") result = best_first(puzzle, max_expanded, false);
-        else if (algorithm == "BIDIJKSTRA") result = bidirectional_dijkstra(puzzle, max_expanded);
-        else if (algorithm == "IDASTAR") result = ida_star(puzzle, max_expanded);
-        else if (algorithm == "01BFS") result = zero_one_bfs(puzzle, max_expanded);
-        else if (algorithm == "DIAL") result = dial(puzzle, max_expanded);
-        else throw std::runtime_error("unknown algorithm: " + algorithm);
+        else if (puzzle.start.size() <= 16) result = search(puzzle);
+        else {
+            // Validate the selector even if a solved or one-dimensional board needs no tail.
+            const std::array<std::string, 11> searches{
+                "ASTAR", "WASTAR", "LINEARCONFLICT", "RBFS", "PDB", "ANNEALING",
+                "DIJKSTRA", "BIDIJKSTRA", "IDASTAR", "01BFS", "DIAL"};
+            if (std::find(searches.begin(), searches.end(), algorithm) == searches.end())
+                throw std::runtime_error("unknown algorithm: " + algorithm);
+            const bool rows_first = puzzle.rows <= puzzle.cols;
+            reduction = rows_first ? "ROWBYROW" : "COLUMNBYCOLUMN";
+            const auto solve_tail = [&](const Puzzle& tail) -> SearchResult {
+                const auto [min_cost, max_cost] = std::minmax_element(tail.costs.begin(), tail.costs.end());
+                const bool compatible = (algorithm != "PDB" || (*min_cost == 1 && *max_cost == 1)) &&
+                    (algorithm != "01BFS" || *max_cost <= 1) &&
+                    (algorithm != "DIAL" || *max_cost <= 100000);
+                if (compatible) {
+                    try {
+                        auto solved = search(tail);
+                        tail_algorithm = algorithm;
+                        return solved;
+                    } catch (const SearchLimitExceeded&) {
+                        // At most 360 reachable states remain. Finish with bounded Dijkstra.
+                    }
+                }
+                tail_algorithm = "DIJKSTRA";
+                return best_first(tail, 360, false);
+            };
+            result = rows_first ? row_by_row(puzzle, solve_tail) : column_by_column(puzzle, solve_tail);
+        }
 
         Puzzle verification = puzzle;
         verification.order = result.moves;
@@ -115,6 +149,8 @@ int run_main(int argc, char** argv) {
         summary << "RESULT: SOLVED; algorithm=" << algorithm << "; moves=" << result.moves.size() << "; placed="
                 << puzzle.start.size() - 1 << "; cost=" << result.total_cost << "; F=" << score
                 << (algorithm == "WASTAR" ? "; weight=" + std::to_string(weight) : "")
+                << (reduction.empty() ? "" : "; reduction=" + reduction)
+                << (tail_algorithm.empty() ? "" : "; tail=" + tail_algorithm)
                 << "; expanded=" << result.expanded << "; seconds=" << result.seconds;
         write_text(paths[1], render_output(puzzle, result.moves, summary.str()));
         if (score_only) std::cout << score << '\n';

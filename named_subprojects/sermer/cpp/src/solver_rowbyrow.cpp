@@ -475,7 +475,7 @@ void solve_final_two_by_two(Board& board, int& blank, const Puzzle& puzzle,
     }
 }
 
-SearchResult row_by_row(const Puzzle& puzzle) {
+SearchResult row_by_row(const Puzzle& puzzle, const TailSolver& solve_tail) {
     const auto started = std::chrono::steady_clock::now();
     const Board goal = puzzle.goal();
     if (puzzle.start == goal) return {{}, 0, 0, 0};
@@ -513,6 +513,10 @@ SearchResult row_by_row(const Puzzle& puzzle) {
         const int goal_b = goal_a + 1;
         const int tile_a = goal_a + 1;
         const int tile_b = goal_b + 1;
+        if (board[goal_a] == tile_a && board[goal_b] == tile_b) {
+            locked[goal_a] = locked[goal_b] = true;
+            continue;
+        }
         const int stage_a = (row + 1) * puzzle.cols + puzzle.cols - 2;
         const int stage_b = (row + 2) * puzzle.cols + puzzle.cols - 1;
         const Board board_before_pair = board;
@@ -583,11 +587,16 @@ SearchResult row_by_row(const Puzzle& puzzle) {
 
     // The remaining board has two rows. Place vertical tile pairs from left to right.
     const int bottom_row = puzzle.rows - 2;
-    for (int col = 0; col < puzzle.cols - 2; ++col) {
+    const int tail_width = solve_tail ? std::min(3, puzzle.cols) : 2;
+    for (int col = 0; col < puzzle.cols - tail_width; ++col) {
         const int goal_a = bottom_row * puzzle.cols + col;
         const int goal_b = (bottom_row + 1) * puzzle.cols + col;
         const int tile_a = goal_a + 1;
         const int tile_b = goal_b + 1;
+        if (board[goal_a] == tile_a && board[goal_b] == tile_b) {
+            locked[goal_a] = locked[goal_b] = true;
+            continue;
+        }
         const int stage_a = bottom_row * puzzle.cols + col + 1;
         const int stage_b = (bottom_row + 1) * puzzle.cols + col + 1;
         // Usually a short pair macro is enough. Some reachable configurations put
@@ -629,11 +638,40 @@ SearchResult row_by_row(const Puzzle& puzzle) {
         locked[static_cast<std::size_t>(goal_b)] = true;
     }
 
-    solve_final_two_by_two(board, blank, puzzle, puzzle.rows - 2, puzzle.cols - 2,
-                           moves, total_cost);
+    std::uint64_t tail_expanded = 0;
+    if (solve_tail) {
+        const int first_col = puzzle.cols - tail_width;
+        Puzzle tail;
+        tail.rows = 2;
+        tail.cols = tail_width;
+        tail.costs = puzzle.costs;
+        for (int row = bottom_row; row < puzzle.rows; ++row) {
+            for (int col = first_col; col < puzzle.cols; ++col) {
+                const int tile = board[row * puzzle.cols + col];
+                tail.start.push_back(tile == 0 ? 0 :
+                    (tile - 1) / puzzle.cols * tail_width - bottom_row * tail_width +
+                    (tile - 1) % puzzle.cols - first_col + 1);
+            }
+        }
+        const auto result = solve_tail(tail);
+        tail_expanded = result.expanded;
+        for (const auto& move : result.moves) {
+            int next = blank;
+            switch (move.direction) {
+            case 'U': next += puzzle.cols; break;
+            case 'D': next -= puzzle.cols; break;
+            case 'L': ++next; break;
+            case 'R': --next; break;
+            }
+            append_move(board, blank, next, puzzle, moves, total_cost);
+        }
+    } else {
+        solve_final_two_by_two(board, blank, puzzle, puzzle.rows - 2, puzzle.cols - 2,
+                               moves, total_cost);
+    }
     if (board != goal) throw std::runtime_error("row-by-row solver: internal verification failed; final board is not solved");
     const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
-    return {std::move(moves), total_cost, workspace.visited_total, elapsed};
+    return {std::move(moves), total_cost, workspace.visited_total + tail_expanded, elapsed};
 }
 
 } // namespace pyatnashki

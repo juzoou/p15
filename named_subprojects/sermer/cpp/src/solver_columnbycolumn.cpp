@@ -11,7 +11,7 @@ namespace pyatnashki {
 
 // Column-by-column is the transposed constructive strategy. Tile labels are
 // remapped to make the transpose's target canonical, then mapped back afterward.
-SearchResult column_by_column(const Puzzle& puzzle) {
+SearchResult column_by_column(const Puzzle& puzzle, const TailSolver& solve_tail) {
     const auto started = std::chrono::steady_clock::now();
     const int rows = puzzle.rows;
     const int cols = puzzle.cols;
@@ -48,7 +48,7 @@ SearchResult column_by_column(const Puzzle& puzzle) {
             old_tile == 0 ? 0 : old_to_new[static_cast<std::size_t>(old_tile)];
     }
 
-    SearchResult result = row_by_row(transposed);
+    SearchResult result = row_by_row(transposed, solve_tail);
     for (Move& move : result.moves) {
         if (move.tile <= 0 || move.tile >= cells)
             throw std::runtime_error("column-by-column solver: invalid transposed tile id");

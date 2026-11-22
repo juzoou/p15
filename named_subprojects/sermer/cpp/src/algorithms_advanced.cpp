@@ -88,7 +88,7 @@ SearchResult linear_conflict_astar(const Puzzle& p,std::uint64_t limit) {
     q.push({linear_conflict(p.start,p),0,seq++,0}); std::unordered_map<Board,Rec,BoardHash> best;best.emplace(p.start,Rec{0,0});
     while(!q.empty()) {auto cur=q.top();q.pop();const Node n=ns[cur.id];auto it=best.find(n.b);if(it==best.end()||it->second.node!=cur.id)continue;
         if(n.b==goal)return {path_of(ns,cur.id),n.g,expanded,std::chrono::duration<double>(Clock::now()-started).count()};
-        if(++expanded>limit)throw std::runtime_error("search expansion limit exceeded");
+        if(++expanded>limit)throw SearchLimitExceeded("search expansion limit exceeded");
         for(auto e:edges(n.b,n.blank,p)){if(n.g>INF_ADV-e.cost)throw std::runtime_error("path cost overflow");Cost ng=n.g+e.cost;auto old=best.find(e.b);if(old!=best.end()&&old->second.g<=ng)continue;
             Cost h=linear_conflict(e.b,p);if(ng>INF_ADV-h)throw std::runtime_error("priority overflow");auto id=ns.size();ns.push_back({std::move(e.b),e.blank,ng,cur.id,{e.tile,e.dir}});best[ns.back().b]={ng,id};q.push({ng+h,ng,seq++,id});}
     } throw std::runtime_error("no solution exists");
@@ -100,7 +100,7 @@ SearchResult rbfs(const Puzzle& p,std::uint64_t limit) {
     std::unordered_set<Board,BoardHash> onpath; onpath.insert(p.start);
     std::function<Cost(const Board&,int,Cost,Cost,Cost)> visit = [&](const Board& b,int blank,Cost g,Cost node_f,Cost f_limit)->Cost {
         if(b==goal){answer=path;answer_cost=g;return g;}
-        if(++expanded>limit)throw std::runtime_error("search expansion limit exceeded");
+        if(++expanded>limit)throw SearchLimitExceeded("search expansion limit exceeded");
         std::vector<Candidate> cs;
         for(auto e:edges(b,blank,p)){if(onpath.count(e.b))continue;Cost ng=checked_add(g,e.cost);Cost h=manhattan(e.b,p);Cost f=std::max(node_f,checked_add(ng,h));cs.push_back({std::move(e.b),e.blank,ng,f,{e.tile,e.dir}});}
         if(cs.empty())return INF_ADV;
@@ -120,10 +120,10 @@ SearchResult pattern_database(const Puzzle& p,std::uint64_t limit) {
     // Complete pattern database for the whole small board, built lazily by reverse BFS.
     const auto started=Clock::now();Board goal=p.goal();std::unordered_map<Board,Cost,BoardHash> dist;std::queue<std::pair<Board,int>> q;
     int gb=static_cast<int>(goal.size()-1);dist.emplace(goal,0);q.push({goal,gb});std::uint64_t expanded=0;
-    while(!q.empty()){if(++expanded>limit)throw std::runtime_error("search expansion limit exceeded while building PDB");auto [b,blank]=std::move(q.front());q.pop();Cost d=dist.at(b);for(auto e:edges(b,blank,p))if(!dist.count(e.b)){dist.emplace(e.b,d+1);q.push({std::move(e.b),e.blank});}}
+    while(!q.empty()){if(++expanded>limit)throw SearchLimitExceeded("search expansion limit exceeded while building PDB");auto [b,blank]=std::move(q.front());q.pop();Cost d=dist.at(b);for(auto e:edges(b,blank,p))if(!dist.count(e.b)){dist.emplace(e.b,d+1);q.push({std::move(e.b),e.blank});}}
     auto it=dist.find(p.start);if(it==dist.end())throw std::runtime_error("no solution exists");
     std::vector<Move> moves;Board cur=p.start;int blank=static_cast<int>(std::find(cur.begin(),cur.end(),0)-cur.begin());
-    while(cur!=goal){bool moved=false;for(auto e:edges(cur,blank,p)){auto d=dist.find(e.b);if(d!=dist.end()&&d->second+1==dist.at(cur)){moves.push_back({e.tile,e.dir});cur=std::move(e.b);blank=e.blank;moved=true;break;}}if(!moved)throw std::runtime_error("PDB reconstruction failed");if(++expanded>limit)throw std::runtime_error("search expansion limit exceeded");}
+    while(cur!=goal){bool moved=false;for(auto e:edges(cur,blank,p)){auto d=dist.find(e.b);if(d!=dist.end()&&d->second+1==dist.at(cur)){moves.push_back({e.tile,e.dir});cur=std::move(e.b);blank=e.blank;moved=true;break;}}if(!moved)throw std::runtime_error("PDB reconstruction failed");if(++expanded>limit)throw SearchLimitExceeded("search expansion limit exceeded");}
     return {std::move(moves),static_cast<Cost>(dist.at(p.start)),expanded,std::chrono::duration<double>(Clock::now()-started).count()};
 }
 
@@ -136,6 +136,6 @@ SearchResult simulated_annealing(const Puzzle& p,std::uint64_t limit) {
         ++expanded;if(h<besth){besth=h;best=cur;bestpath=curpath;}if(cur==goal){Cost cost=0;for(auto m:curpath)cost=checked_add(cost,p.costs[static_cast<std::size_t>(direction_index(m.direction))]);return {curpath,cost,expanded,std::chrono::duration<double>(Clock::now()-started).count()};}
         if(curpath.size()>500){cur=p.start;blank=static_cast<int>(std::find(cur.begin(),cur.end(),0)-cur.begin());curpath.clear();}
     }
-    throw std::runtime_error("simulated annealing did not find a solution within the iteration budget; best Manhattan heuristic="+std::to_string(besth));
+    throw SearchLimitExceeded("simulated annealing did not find a solution within the iteration budget; best Manhattan heuristic="+std::to_string(besth));
 }
 }

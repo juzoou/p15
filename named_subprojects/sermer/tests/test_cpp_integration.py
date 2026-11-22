@@ -49,6 +49,34 @@ class SolverTests(unittest.TestCase):
         self.assertIn("algorithm=ASTAR", self.invoke().stdout)
         self.assertEqual(self.checked().score, 499)
 
+    def test_large_board_searches_use_reduced_tail(self):
+        algorithms = (
+            "astar", "wastar", "linearconflict", "rbfs", "pdb", "annealing",
+            "dijkstra", "bidijkstra", "idastar", "01bfs", "dial",
+        )
+        for rows, cols, reduction in ((4, 5, "ROWBYROW"), (5, 4, "COLUMNBYCOLUMN")):
+            board = list(range(1, rows * cols)) + [0]
+            board[-2], board[-1] = board[-1], board[-2]
+            for algorithm in algorithms:
+                with self.subTest(shape=(rows, cols), algorithm=algorithm):
+                    self.task(rows, cols, board)
+                    output = self.invoke("--algorithm", algorithm).stdout
+                    self.assertIn(f"reduction={reduction}", output)
+                    self.assertIn(f"tail={algorithm.upper()}", output)
+                    self.assertTrue(self.checked().solved)
+
+    def test_large_board_search_fallback(self):
+        board = list(range(1, 20)) + [0]
+        board[-3:] = [0, 18, 19]
+        for algorithm in ("astar", "pdb", "01bfs", "dial"):
+            with self.subTest(algorithm=algorithm):
+                self.task(4, 5, board, costs=(2, 3, 100001, 5))
+                output = self.invoke("--algorithm", algorithm, "--max-expanded", "1").stdout
+                self.assertIn("tail=DIJKSTRA", output)
+                checked = self.checked()
+                self.assertTrue(checked.solved)
+                self.assertEqual(checked.total_cost, 200002)
+
     def test_partial_order_score(self):
         self.task(order=[])
         output = self.invoke().stdout
