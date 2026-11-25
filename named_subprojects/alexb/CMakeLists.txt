@@ -15,7 +15,7 @@ endif()
 
 add_library(p15core STATIC
   src/common.cpp src/io.cpp src/route.cpp src/exact.cpp src/reduce.cpp
-  src/pdb.cpp src/ida.cpp src/greedy.cpp src/beam.cpp src/best.cpp)
+  src/pdb.cpp src/ida.cpp src/greedy.cpp src/beam.cpp src/best.cpp src/goal.cpp)
 
 foreach(alg exact ida reduce greedy beam best)
   add_executable(p15_${alg} src/main_${alg}.cpp)

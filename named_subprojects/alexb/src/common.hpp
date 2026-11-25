@@ -39,6 +39,7 @@ struct Problem {
     int R = 0, C = 0;                   // строки, столбцы
     std::vector<int> start;             // R*C клеток построчно, 0 = пусто
     long long cost[4] = {1, 1, 1, 1};   // стоимость хода фишки U D L R
+    bool requireGoal = false;            // режим соревнования: принять только полную сборку
     bool costGiven = false;
     bool hasOrder = false;              // режим проверки: задан блок ORDER
     std::vector<std::pair<int, int>> order;  // (фишка, направление фишки)

@@ -30,6 +30,7 @@ class IdaCore {
 public:
     IdaCore(const Problem& pr, int X, int missing, const std::vector<const PatternDB*>& dbs, int ttBits)
         : R(pr.R), C(pr.C), N(pr.R * pr.C), K(pr.R * pr.C - 1), missing(missing), ttBits(ttBits) {
+        fullOnly = pr.requireGoal;
         for (int d = 0; d < 4; d++) {
             cst[d] = pr.cost[d];
             bc[d] = pr.cost[d ^ 1];
@@ -161,6 +162,7 @@ public:
 
 private:
     int R, C, N, K;
+    bool fullOnly = false;
     int missing;
     int ttBits;
     long long cst[4], bc[4];
@@ -310,7 +312,7 @@ private:
             return;
         }
         long long F = TILE_VALUE * P - g;
-        if (F > bestF) {
+        if ((!fullOnly || P == K) && F > bestF) {
             bestF = F;
             bestPath = path;
             improved = true;
@@ -369,7 +371,7 @@ IdaResult idaSearch(const Problem& pr, const Moves& incumbent, double timeLimit,
         inc.clear();
         simulate(pr, inc, sc);
     }
-    long long bestF = sc.F;
+    long long bestF = pr.requireGoal && sc.P != pr.tiles() ? -(1LL << 61) : sc.F;
     Moves bestPath = inc;
     res.moves = inc;
     res.F = bestF;
@@ -392,7 +394,7 @@ IdaResult idaSearch(const Problem& pr, const Moves& incumbent, double timeLimit,
     uint64_t nodes = 0;
     bool allProven = true;
     if (goalReachable(pr)) {
-        IdaCore core(pr, -1, 1, ptrs(base), ttBits);
+        IdaCore core(pr, -1, pr.requireGoal ? 0 : 1, ptrs(base), ttBits);
         allProven = core.run(tm, bestF, bestPath, nodes, opt);
     } else {
         // кандидаты X: целевая клетка на чётном расстоянии от угла

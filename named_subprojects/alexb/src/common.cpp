@@ -159,6 +159,14 @@ static Moves removeLoops(const Problem& pr, const Moves& mv) {
 }
 
 Moves polish(const Problem& pr, const Moves& mv) {
+    if (pr.requireGoal) {
+        Score original, shorter;
+        if (simulate(pr, mv, original) && original.P == pr.tiles()) {
+            Moves simple = removeLoops(pr, mv);
+            if (simulate(pr, simple, shorter) && shorter.P == pr.tiles() && shorter.cost <= original.cost) return simple;
+            return mv;
+        }
+    }
     Moves a = bestPrefix(pr, mv);
     Moves b = removeLoops(pr, a);
     Score sa, sb;
@@ -171,6 +179,7 @@ Moves solveLine(const Problem& pr) {
     Board b(pr);
     int L = b.N;
     int fwd = (pr.R == 1) ? RIGHT : DOWN;   // направление роста индекса клетки
+    if (pr.requireGoal) return Moves(L - 1 - b.blank, (uint8_t)fwd);
     int bwd = opposite(fwd);
     long long bestF = TILE_VALUE * b.placed();
     int bestK = b.blank;

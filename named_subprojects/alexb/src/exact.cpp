@@ -75,7 +75,7 @@ Moves solveExact(const Problem& pr, const Options& opt, const Timer& tm) {
     };
 
     const int K = N - 1;
-    long long bestF = TILE_VALUE * placedOf(st0);
+    long long bestF = pr.requireGoal ? -(1LL << 61) : TILE_VALUE * placedOf(st0);
     uint64_t bestSt = st0;
 
     using QE = std::pair<long long, uint64_t>;
@@ -90,7 +90,9 @@ Moves solveExact(const Problem& pr, const Options& opt, const Timer& tm) {
         if (d != dist[r]) continue;
         if (TILE_VALUE * K - d <= bestF) break;   // дальше улучшить F невозможно
         long long F = TILE_VALUE * placedOf(st) - d;
-        if (F > bestF) { bestF = F; bestSt = st; }
+        if (pr.requireGoal) {
+            if (placedOf(st) == K) { bestF = F; bestSt = st; break; }
+        } else if (F > bestF) { bestF = F; bestSt = st; }
         if ((++popped & 0xFFFF) == 0 && tm.expired()) break;
         int b = blankOf(st);
         int br = b / C, bc = b % C;

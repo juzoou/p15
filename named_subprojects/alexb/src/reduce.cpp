@@ -24,6 +24,7 @@ bool makeSubProblem(const Problem& pr, const Board& b, int r0, int c0, Problem& 
     sub.C = pr.C - c0;
     for (int d = 0; d < 4; d++) sub.cost[d] = pr.cost[d];
     sub.costGiven = pr.costGiven;
+    sub.requireGoal = pr.requireGoal;
     sub.start.assign((size_t)sub.R * sub.C, 0);
     for (int i = 0; i < sub.R; i++)
         for (int j = 0; j < sub.C; j++) {
@@ -203,6 +204,7 @@ RunResult runReduce(const Problem& pr, const Options& opt, const Timer& tm, Rng&
             if (!makeSubProblem(pr, b, r0, c0, sub)) return res;
             Options o2 = opt;
             o2.verbose = 0;
+            o2.params["exact-max-cells"] = std::to_string(exactCells);
             Moves em = solveExact(sub, o2, Timer(0));
             if (!applyMoves(b, em, out)) return res;
             res.complete = true;
@@ -260,12 +262,12 @@ RunResult runReduce(const Problem& pr, const Options& opt, const Timer& tm, Rng&
 
 Moves solveReduce(const Problem& pr, const Options& opt, const Timer& tm) {
     Rng rng(opt.seed);
-    const int exactCells = (int)opt.getI("exact-cells", 9);
+    const int exactCells = (int)std::clamp(opt.getI("exact-cells", 9), 4LL, 10LL);
     const int maxRuns = (int)opt.getI("runs", tm.limit > 0 ? 1000000 : 20);
     const bool useIda = opt.getI("ida-endgame", 1) != 0;
 
     Moves best;
-    long long bestF = scoreOfEmpty(pr).F;
+    long long bestF = pr.requireGoal ? -(1LL << 61) : scoreOfEmpty(pr).F;
     // внешний рекорд (от портфеля): прогоны, которые его заведомо не превзойдут, обрываются
     const long long stopBelow = std::max(bestF, (long long)opt.getI("stop-below", bestF));
     RunResult bestRun;
@@ -283,12 +285,12 @@ Moves solveReduce(const Problem& pr, const Options& opt, const Timer& tm) {
         simulate(pr, pm, sc);
         logf(2, opt, "[reduce] run %d mode %d: complete=%d moves=%zu F=%lld\n", runs, mode,
              (int)rr.complete, pm.size(), sc.F);
-        if (sc.F > bestF) {
+        if ((!pr.requireGoal || sc.P == pr.tiles()) && sc.F > bestF) {
             bestF = sc.F;
             best = pm;
             lastImprove = runs;
         }
-        if (rr.complete && (!haveRun || sc.F > bestRunF)) {
+        if (rr.complete && (!pr.requireGoal || sc.P == pr.tiles()) && (!haveRun || sc.F > bestRunF)) {
             bestRun = rr;
             bestRunF = sc.F;
             haveRun = true;
@@ -314,7 +316,7 @@ Moves solveReduce(const Problem& pr, const Options& opt, const Timer& tm) {
             cand.insert(cand.end(), ir.moves.begin(), ir.moves.end());
             Moves pm = polish(pr, cand);
             Score sc;
-            if (simulate(pr, pm, sc) && sc.F > bestF) {
+            if (simulate(pr, pm, sc) && (!pr.requireGoal || sc.P == pr.tiles()) && sc.F > bestF) {
                 logf(1, opt, "[reduce] ida endgame: F %lld -> %lld%s\n", bestF, sc.F,
                      ir.optimal ? " (endgame optimal)" : "");
                 bestF = sc.F;

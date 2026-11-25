@@ -110,7 +110,7 @@ public:
             return Moves();
         }
 
-        long long localBest = TILE_VALUE * root.P;
+        long long localBest = pr.requireGoal && !stageMode && root.P != K ? -(1LL << 61) : TILE_VALUE * root.P;
         int bestHist = -2;
         long long bestGoalG = (long long)4e18;
         int bestGoalHist = -1;
@@ -213,7 +213,7 @@ public:
                 if (fullValue - minG <= std::max(bestF, localBest)) break;
                 for (const Child& c : ch) {
                     long long F = TILE_VALUE * c.P - c.g;
-                    if (F > localBest) {
+                    if ((!pr.requireGoal || c.P == K) && F > localBest) {
                         localBest = F;
                         hist.push_back({cur[c.parent].hist, (uint8_t)c.move});
                         bestHist = (int)hist.size() - 1;
@@ -562,15 +562,15 @@ Moves stagedBeam(const Problem& pr, const Options& opt, const Timer& tm, int W, 
         tail = solveReduce(sub, of, Timer(std::min(2.0, lim * 0.1)));
         Score s1, s2;
         simulate(sub, tail, s1);
-        long long sbF = s1.F;
+        long long sbF = pr.requireGoal && s1.P != sub.tiles() ? -(1LL << 61) : s1.F;
         Moves gb = globalBeam(sub, o2, Timer(lim), std::max(2000, 4 * W), sbF);
-        if (simulate(sub, gb, s2) && s2.F > s1.F) {
+        if (simulate(sub, gb, s2) && (!pr.requireGoal || s2.P == sub.tiles()) && (s2.F > s1.F || (pr.requireGoal && s1.P < sub.tiles()))) {
             tail = gb;
             s1 = s2;
         }
         if (sn <= 16) {
             Moves im = idaSearch(sub, tail, std::max(0.2, lim * 0.5), o2).moves;
-            if (simulate(sub, im, s2) && s2.F > s1.F) tail = im;
+            if (simulate(sub, im, s2) && (!pr.requireGoal || s2.P == sub.tiles()) && (s2.F > s1.F || (pr.requireGoal && s1.P < sub.tiles()))) tail = im;
         }
     }
     applyMoves(b, tail, out);
@@ -579,11 +579,23 @@ Moves stagedBeam(const Problem& pr, const Options& opt, const Timer& tm, int W, 
 
 }  // namespace
 
+// Короткий глобальный поиск перед послойной сборкой. При повторном запуске
+// из найденной позиции луч может выйти из прежнего локального минимума.
+Moves improveBeamPrefix(const Problem& pr, const Options& opt, const Timer& tm, int width) {
+    Options o = opt;
+    if (!o.has("lambda")) o.params["lambda"] = "0";
+    if (!o.has("w")) o.params["w"] = "3";
+    long long score = scoreOfEmpty(pr).F;
+    Problem partial = pr;
+    partial.requireGoal = false;
+    return globalBeam(partial, o, tm, width, score);
+}
+
 Moves solveBeam(const Problem& pr, const Options& opt, const Timer& tm) {
     if (pr.allCostsZero()) return solveReduce(pr, opt, tm);
     const int N = pr.cells();
     if (N > 65000) throw NotApplicable("board is too large for beam search");
-    long long bestF = scoreOfEmpty(pr).F;
+    long long bestF = pr.requireGoal ? -(1LL << 61) : scoreOfEmpty(pr).F;
     Moves best;
     // целиком -- только небольшие "квадратные" поля; вытянутые и большие -- послойно
     const bool staged = opt.getI("staged", (pr.R <= 6 && pr.C <= 6) ? 0 : 1) != 0;
@@ -606,12 +618,14 @@ Moves solveBeam(const Problem& pr, const Options& opt, const Timer& tm) {
         }
         Score sc;
         mv = polish(pr, mv);
-        if (simulate(pr, mv, sc) && sc.F > bestF) {
+        if (simulate(pr, mv, sc) && (!pr.requireGoal || sc.P == pr.tiles()) && sc.F > bestF) {
             best = mv;
             bestF = sc.F;
         }
-        logf(1, opt, "[beam] %s width %lld: F = %lld, best F = %lld (%.2fs)\n", staged ? "staged" : "global", ww,
-             sc.F, bestF, tm.elapsed());
+        if (pr.requireGoal && sc.P != pr.tiles())
+            logf(1, opt, "[beam] width %lld: incomplete, %d/%d tiles (%.2fs)\n", ww, sc.P, pr.tiles(), tm.elapsed());
+        else
+            logf(1, opt, "[beam] %s width %lld: F = %lld, best F = %lld (%.2fs)\n", staged ? "staged" : "global", ww, sc.F, bestF, tm.elapsed());
         if (W > 0 || tm.expired() || ww >= wcap || complete) break;
         // следующий прогон -- в 3 раза шире, если по прогнозу успевает
         if (tm.limit > 0 && t0.elapsed() * (staged ? 4.5 : 3.5) > tm.remaining()) break;

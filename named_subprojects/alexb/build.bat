@@ -3,7 +3,7 @@ rem Windows build: Visual Studio (cl, run from a Developer Command Prompt) or Mi
 rem Binaries go to bin\. Stack size is raised to 256 MB (deep recursion in ida).
 cd /d "%~dp0"
 if not exist bin mkdir bin
-set SRC=src\common.cpp src\io.cpp src\route.cpp src\exact.cpp src\reduce.cpp src\pdb.cpp src\ida.cpp src\greedy.cpp src\beam.cpp src\best.cpp
+set SRC=src\common.cpp src\io.cpp src\route.cpp src\exact.cpp src\reduce.cpp src\pdb.cpp src\ida.cpp src\greedy.cpp src\beam.cpp src\best.cpp src\goal.cpp
 where cl >nul 2>nul
 if %errorlevel%==0 (
   for %%a in (exact ida reduce greedy beam best) do (

@@ -1,5 +1,5 @@
 // io.cpp -- разбор входных файлов, запись решения, общая функция main.
-#include "common.hpp"
+#include "solvers.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -449,6 +449,7 @@ void usage(const std::string& algo) {
     std::cerr << "usage: p15_" << algo << " <task file> <solution file> [options]\n"
               << "  --time T     time limit in seconds (anytime algorithms)\n"
               << "  --seed S     random seed\n"
+              << "  --partial    maximize F over partial arrangements too (legacy mode)\n"
               << "  --strict     strict input format checking\n"
               << "  -v           verbose log to stderr\n"
               << "  --key value  algorithm-specific parameters (see README)\n"
@@ -465,6 +466,7 @@ int runSolverMain(int argc, char** argv, const std::string& algo, double default
         if (a == "-h" || a == "--help") { usage(algo); return 0; }
         if (a == "-v" || a == "--verbose") { opt.verbose++; continue; }
         if (a == "-vv") { opt.verbose += 2; continue; }
+        if (a == "--partial") { opt.params["partial"] = "1"; continue; }
         if (a == "--strict") { opt.strict = true; continue; }
         if (a.size() > 1 && a[0] == '-' && !std::isdigit((unsigned char)a[1])) {
             std::string key = a.substr(a[1] == '-' ? 2 : 1), val;
@@ -507,10 +509,18 @@ int runSolverMain(int argc, char** argv, const std::string& algo, double default
     for (auto& w : pr.warnings) std::cerr << "warning: " << w << "\n";
     if (pr.hasOrder) return verifyMode(pr, outPath);
 
+    pr.requireGoal = !opt.getI("partial", 0);
+    if (pr.requireGoal && !goalReachable(pr)) {
+        writeErrorFile(outPath, "NO SOLUTION: final arrangement is unreachable");
+        std::cerr << "NO SOLUTION: final arrangement is unreachable\n";
+        return 5;
+    }
     Timer timer(opt.timeLimit);
     Moves mv;
     try {
-        if (pr.R == 1 || pr.C == 1) mv = solveLine(pr);
+        if (pr.requireGoal && scoreOfEmpty(pr).P == pr.tiles()) mv.clear();
+        else if (pr.R == 1 || pr.C == 1) mv = solveLine(pr);
+        else if (pr.requireGoal) mv = solveForGoal(pr, opt, timer, algo);
         else mv = fn(pr, opt, timer);
     } catch (const NotApplicable& e) {
         std::cerr << algo << ": not applicable: " << e.what() << "\n";
@@ -530,6 +540,11 @@ int runSolverMain(int argc, char** argv, const std::string& algo, double default
     mv = polish(pr, mv);
     simulate(pr, mv, sc);
 
+    if (pr.requireGoal && sc.P != pr.tiles()) {
+        writeErrorFile(outPath, "SEARCH INCOMPLETE: no full solution found within the search budget");
+        std::cerr << algo << ": search incomplete, no full ORDER found\n";
+        return 7;
+    }
     // перевод ходов пустой клетки в ходы фишек
     std::vector<std::pair<int, int>> tm;
     tm.reserve(mv.size());

@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")"
 CXX=${CXX:-g++}
 mkdir -p bin build
-SRC="common io route exact reduce pdb ida greedy beam best"
+SRC="common io route exact reduce pdb ida greedy beam best goal"
 OBJ=""
 for s in $SRC; do
   $CXX -O2 -std=c++17 -Wall -Wextra -c src/$s.cpp -o build/$s.o

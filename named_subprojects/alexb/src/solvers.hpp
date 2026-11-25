@@ -21,6 +21,9 @@ Moves solveBeam(const Problem& pr, const Options& opt, const Timer& tm);
 // best   -- портфель: запускает подходящие алгоритмы и берёт лучший результат
 Moves solveBest(const Problem& pr, const Options& opt, const Timer& tm);
 
+Moves solveForGoal(const Problem& pr, const Options& opt, const Timer& tm, const std::string& algorithm);
+Moves improveBeamPrefix(const Problem& pr, const Options& opt, const Timer& tm, int width);
+
 // IDA* с начальным решением (рекордом). Возвращает лучшую найденную
 // последовательность; optimal = true, если оптимальность доказана.
 struct IdaResult {
