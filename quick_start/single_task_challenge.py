@@ -11,7 +11,7 @@ TIMEOUT = 35
 CHECKER = r"python3 scripts\check_solve_ipc.py"
 
 
-def run_test(in_path, out_path, timeout=TIMEOUT):
+def run_test(cmd, in_path, out_path, timeout=TIMEOUT):
     with open(out_path, "w"): pass
     
     full_cmd = f"{cmd} {in_path} {out_path}"
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     for cmd, label in locate_solvers(authors):
         in_path = r"tests\task89x98.txt"
         out_path = os.path.join(outdir, f"{label}.txt")
-        run_res = run_test(in_path, out_path)
+        run_res = run_test(cmd, in_path, out_path)
         verify_res = verify_test(out_path)
         res.append((label, run_res, verify_res))
     

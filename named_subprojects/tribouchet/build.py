@@ -20,6 +20,7 @@ SRC_DIR = ROOT / "src"
 BUILD_DIR = ROOT / "build"
 IS_WINDOWS = os.name == "nt"
 EXE = ROOT / ("solver.exe" if IS_WINDOWS else "solver")
+EXE = ROOT / "solver.exe"
 
 
 def die(msg):
