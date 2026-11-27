@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-std::optional<PuzzleInput> parse_file(const std::filesystem::path& p) {
+std::optional<PuzzleInput> parse_file(const std::string& p) {
     std::ifstream file(p);
     if (!file) return std::nullopt;
 

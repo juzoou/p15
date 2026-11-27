@@ -17,6 +17,6 @@ struct PuzzleInput {
     std::vector<uint16_t> cells;      // 0 = пустая клетка
 };
 
-std::optional<PuzzleInput> parse_file(const std::filesystem::path& p);
+std::optional<PuzzleInput> parse_file(const std::string& p);
 
 #endif // PARSER_H
