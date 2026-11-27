@@ -91,7 +91,14 @@ class TrackLogger:
             self._print(cells)
 
 
-
+CHECKER = r"python3 scripts\check_solve_ipc.py"
+def verify_test(out_path, checker=CHECKER):
+    cmd = f"{checker} {out_path}"
+    sp = subprocess.run(cmd, capture_output=True, text=True)
+    res = sp.stdout.strip().split("\n")
+    if len(res) == 2:
+        return res[0] == "OK", int(res[1])
+    return False, 0
 
 
 
@@ -306,6 +313,8 @@ class ProcessPool:
         self.thread = Thread(target=self.worker, daemon=True)
         self.thread.start()
 
+from boost_try import run_boost
+
 
 if __name__ == "__main__":
     from utils.ensure_cwd import assert_cwd
@@ -342,7 +351,29 @@ if __name__ == "__main__":
     for cmd, reason in pool.bad_commands:
         print(f"[KILLED] {cmd.label}: {reason}")
 
+    print()
+    print("And the winner iiiiis...")
+    res = []
+    for solution in os.listdir(outdir):
+        res.append((solution, *verify_test(os.path.join(outdir, solution))))
+    res.sort(key=lambda x: int(x[2]))
+    for s, ok, r in res:
+        print(f"{s:30} {ok:5} {r}")
+    print()
+    best = res[-1] 
+    print(res[-1])
 
-        
+    print()
+    best_s = best[0]
+    bb = os.path.join(outdir, "best_boosted.txt")
+    time_budget = 40
+    run_boost(os.path.join(outdir, best_s), bb, time_budget)
 
+    print()
+    print("Verify best boosted")
+    boosted = verify_test(bb)
+    print(*boosted)
+    print(f"Boost delta: {boosted[1] - best[2]}")
+    print(f"Time budget was {time_budget} seconds")
+    os.remove(bb)
 

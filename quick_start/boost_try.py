@@ -10,6 +10,7 @@ BASE = "test_solutions"
 OUT_BASE = "test_boost"
 BOOST_TIME = 20
 CHECKER = r"python3 scripts\check_solve_ipc.py"
+BOOST = TBoost.locate()[0][0]
 
 
 def verify_solution(out_path, checker=CHECKER):
@@ -21,8 +22,8 @@ def verify_solution(out_path, checker=CHECKER):
     return False, 0
 
 
-def run_boost(in_file, out_file):
-    cmd = f"{boost} -t {BOOST_TIME} {in_file} {out_file}"
+def run_boost(in_file, out_file, time=BOOST_TIME):
+    cmd = f"{BOOST} -t {BOOST_TIME} {in_file} {out_file}"
     code, output, stats = run(cmd, f"Running {cmd}...", timeout=BOOST_TIME + 10)
     return code, output, stats
 
@@ -37,7 +38,6 @@ def print_table(table, sep="  "):
 
 
 if __name__ == "__main__":
-    boost = TBoost.locate()[0][0]
     os.makedirs(OUT_BASE, exist_ok=True)
 
     table = []
